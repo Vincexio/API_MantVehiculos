@@ -17,7 +17,7 @@ function isValidObjectId(id) {
 }
 
 app.get('/', (req, res) => {
-  return res.json({ message: 'API de mantenimiento de vehículos', docs: '/api-docs' });
+  return res.redirect('/api-docs');
 });
 
 app.get('/usuarios', async (req, res) => {
