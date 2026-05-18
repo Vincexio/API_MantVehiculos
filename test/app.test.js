@@ -42,8 +42,18 @@ describe('API de Mantenimiento de Vehículos', () => {
 
     expect(response.statusCode).toBe(201);
     expect(response.body).toHaveProperty('id');
+    expect(response.body).not.toHaveProperty('_id');
     expect(response.body.marca).toBe('Hyundai');
     vehiculoId = response.body.id;
+  });
+
+  it('rechaza un kilometraje menor al actual', async () => {
+    const response = await request(app)
+      .put(`/vehiculos/${vehiculoId}/kilometraje`)
+      .send({ kilometraje_actual: 31000 });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.body).toHaveProperty('error');
   });
 
   it('actualiza el kilometraje del vehículo', async () => {
@@ -80,10 +90,25 @@ describe('API de Mantenimiento de Vehículos', () => {
 
     expect(maintenanceResponse.statusCode).toBe(201);
     expect(maintenanceResponse.body).toHaveProperty('id');
+    expect(maintenanceResponse.body).not.toHaveProperty('_id');
 
     const historialResponse = await request(app).get(`/mantenimientos/${vehiculoId}`);
     expect(historialResponse.statusCode).toBe(200);
     expect(Array.isArray(historialResponse.body)).toBe(true);
     expect(historialResponse.body[0]).toHaveProperty('tipo', 'Cambio de frenos');
+  });
+
+  it('rechaza fecha inválida al registrar mantenimiento', async () => {
+    const response = await request(app)
+      .post('/mantenimientos')
+      .send({
+        vehiculo_id: vehiculoId,
+        tipo: 'Cambio de aceite',
+        fecha: 'invalid',
+        kilometraje: 33000,
+      });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.body).toHaveProperty('error');
   });
 });

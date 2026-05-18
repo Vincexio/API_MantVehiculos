@@ -7,8 +7,8 @@ module.exports = {
   },
   servers: [
     {
-      url: 'http://localhost:3000',
-      description: 'Servidor local de desarrollo',
+      url: process.env.SWAGGER_BASE_URL || `http://localhost:${process.env.PORT || 3000}`,
+      description: 'URL base de la API (configurable vía SWAGGER_BASE_URL en producción).',
     },
   ],
   components: {

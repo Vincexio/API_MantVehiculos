@@ -93,7 +93,16 @@ app.post('/vehiculos', async (req, res) => {
       createdAt: new Date(),
     };
     const result = await vehiculos.insertOne(vehicle);
-    return res.status(201).json({ id: result.insertedId, ...vehicle });
+    return res.status(201).json({
+      id: result.insertedId.toString(),
+      usuario_id,
+      marca,
+      modelo,
+      anio,
+      patente,
+      kilometraje_actual: vehicle.kilometraje_actual,
+      createdAt: vehicle.createdAt,
+    });
   } catch (error) {
     console.error('POST /vehiculos error', error);
     return res.status(500).json({ error: 'Error al crear el vehículo.' });
@@ -137,7 +146,14 @@ app.put('/vehiculos/:vehiculo_id/kilometraje', async (req, res) => {
       return res.status(404).json({ error: 'Vehículo no encontrado.' });
     }
 
-    const updated = { ...existing, kilometraje_actual };
+    if (!Number.isInteger(kilometraje_actual) || kilometraje_actual < 0) {
+      return badRequest(res, 'kilometraje_actual debe ser un entero mayor o igual a 0.');
+    }
+
+    if (kilometraje_actual < existing.kilometraje_actual) {
+      return badRequest(res, 'kilometraje_actual no puede ser menor al kilometraje actual registrado.');
+    }
+
     if (vehiculos.updateOne) {
       await vehiculos.updateOne({ _id: new ObjectId(vehiculo_id) }, { $set: { kilometraje_actual } });
     } else {
@@ -164,6 +180,11 @@ app.post('/mantenimientos', async (req, res) => {
     return badRequest(res, 'vehiculo_id inválido.');
   }
 
+  const parsedFecha = new Date(fecha);
+  if (typeof fecha !== 'string' || isNaN(parsedFecha.getTime())) {
+    return badRequest(res, 'fecha inválida. Debe ser una cadena ISO con fecha y hora válidas.');
+  }
+
   try {
     const { vehiculos, mantenimientos } = getCollections();
     const vehiculo = await vehiculos.findOne({ _id: new ObjectId(vehiculo_id) });
@@ -174,7 +195,7 @@ app.post('/mantenimientos', async (req, res) => {
     const maintenance = {
       vehiculo_id: new ObjectId(vehiculo_id),
       tipo,
-      fecha: new Date(fecha),
+      fecha: parsedFecha,
       kilometraje,
       descripcion: descripcion || '',
       vehiculo_info: {
@@ -186,7 +207,17 @@ app.post('/mantenimientos', async (req, res) => {
       createdAt: new Date(),
     };
     const result = await mantenimientos.insertOne(maintenance);
-    return res.status(201).json({ id: result.insertedId, ...maintenance });
+    return res.status(201).json({
+      id: result.insertedId.toString(),
+      vehiculo_id,
+      tipo,
+      fecha: maintenance.fecha,
+      kilometraje,
+      descripcion: maintenance.descripcion,
+      vehiculo_info: maintenance.vehiculo_info,
+      proximo_mantenimiento: maintenance.proximo_mantenimiento,
+      createdAt: maintenance.createdAt,
+    });
   } catch (error) {
     console.error('POST /mantenimientos error', error);
     return res.status(500).json({ error: 'Error al registrar el mantenimiento.' });
